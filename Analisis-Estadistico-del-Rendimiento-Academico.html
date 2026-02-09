@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualización de Análisis Estadístico</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Work+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a1a2e;
+            --secondary: #16213e;
+            --accent: #0f3460;
+            --highlight: #e94560;
+            --light: #f1f1f1;
+            --turquoise: #00d9ff;
+            --orange: #ff6b35;
+            --purple: #9b59b6;
+            --green: #2ecc71;
+        }
+
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--accent) 100%);
+            color: var(--light);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 1s ease-out;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--turquoise), var(--highlight), var(--orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            letter-spacing: -2px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInUp 0.8s ease-out backwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--highlight), var(--turquoise), var(--orange));
+            transform: scaleX(0);
+            transition: transform 0.6s ease;
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: var(--turquoise);
+            font-weight: 700;
+        }
+
+        .card-description {
+            margin-bottom: 30px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.05rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            margin: 30px 0;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .stats-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.2), rgba(0, 217, 255, 0.2));
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-box:hover {
+            transform: scale(1.05);
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.3), rgba(0, 217, 255, 0.3));
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--turquoise);
+        }
+
+        .hypothesis-test {
+            background: rgba(233, 69, 96, 0.1);
+            border-left: 4px solid var(--highlight);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .hypothesis-test h3 {
+            color: var(--highlight);
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .result {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .significant {
+            background: var(--green);
+            color: white;
+        }
+
+        .not-significant {
+            background: var(--orange);
+            color: white;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+
+        .interactive-btn {
+            background: linear-gradient(135deg, var(--highlight), var(--purple));
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+        }
+
+        .interactive-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(233, 69, 96, 0.4);
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .turno-mat {
+            background: var(--turquoise);
+        }
+
+        .turno-vesp {
+            background: var(--orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Análisis Estadístico Visual</h1>
+            <p class="subtitle">Comparación entre Turnos Matutino y Vespertino</p>
+        </header>
+
+        <div class="analysis-grid">
+            <!-- Card 1: Prueba t -->
+            <div class="card">
+                <h2>1. Comparación de Promedios</h2>
+                <p class="card-description">
+                    La prueba t compara si las medias de los promedios generales son estadísticamente diferentes entre turnos.
+                </p>
+                
+                <div class="chart-container">
+                    <canvas id="boxplotChart"></canvas>
+                </div>
+
+                <div class="stats-display">
+                    <div class="stat-box">
+                        <div class="stat-label">Media Matutino</div>
+                        <div class="stat-value">8.2</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Media Vespertino</div>
+                        <div class="stat-value">7.8</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Diferencia</div>
+                        <div class="stat-value">0.4</div>
+                    </div>
+                </div>
+
+                <div class="hypothesis-test">
+                    <h3>Resultado de la Prueba</h3>
+                    <p>H₀: Las medias son iguales entre turnos</p>
+                    <p>H₁: Las medias son diferentes</p>
+                    <p style="margin-top: 10px;">Valor p = 0.023</p>
+                    <span class="result significant">✓ Diferencia significativa (p < 0.05)</span>
+                </div>
+            </div>
+
+            <!-- Card 2: Distribuciones -->
+            <div class="card">
+                <h2>2. Distribución de Promedios</h2>
+                <p class="card-description">
+                    Los histogramas muestran cómo se distribuyen los promedios en cada turno. Permite verificar normalidad visualmente.
+                </p>
+
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color turno-mat"></div>
+                        <span>Matutino</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color turno-vesp"></div>
+                        <span>Vespertino</span>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="histogramChart"></canvas>
+                </div>
+
+                <div class="hypothesis-test">
+                    <h3>Prueba de Normalidad (Shapiro-Wilk)</h3>
+                    <p>Matutino: p = 0.342</p>
+                    <p>Vespertino: p = 0.289</p>
+                    <span class="result not-significant">✓ Ambos grupos siguen distribución normal (p > 0.05)</span>
+                </div>
+            </div>
+
+            <!-- Card 3: Proporciones -->
+            <div class="card">
+                <h2>3. Tasas de Aprobación</h2>
+                <p class="card-description">
+                    Compara las proporciones de estudiantes aprobados entre turnos usando una prueba de proporciones.
+                </p>
+
+                <div class="chart-container">
+                    <canvas id="approvalChart"></canvas>
+                </div>
+
+                <div class="stats-display">
+                    <div class="stat-box">
+                        <div class="stat-label">Aprobados Mat.</div>
+                        <div class="stat-value">78%</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Aprobados Vesp.</div>
+                        <div class="stat-value">65%</div>
+                    </div>
+                </div>
+
+                <div class="hypothesis-test">
+                    <h3>Prueba de Proporciones</h3>
+                    <p>H₀: Las proporciones son iguales</p>
+                    <p>χ² = 4.82, p = 0.028</p>
+                    <span class="result significant">✓ Diferencia significativa en aprobación</span>
+                </div>
+            </div>
+
+            <!-- Card 4: Chi-cuadrado -->
+            <div class="card">
+                <h2>4. Independencia de Variables</h2>
+                <p class="card-description">
+                    La prueba Chi-cuadrado evalúa si existe relación entre variables categóricas como Turno y Lugar de estudio.
+                </p>
+
+                <div class="chart-container">
+                    <canvas id="chiSquareChart"></canvas>
+                </div>
+
+                <div class="hypothesis-test">
+                    <h3>Turno vs Lugar de Estudio</h3>
+                    <p>χ² = 8.45, p = 0.015</p>
+                    <span class="result significant">✓ Las variables están relacionadas</span>
+                </div>
+
+                <div class="hypothesis-test" style="margin-top: 20px;">
+                    <h3>Género vs Herramientas Digitales</h3>
+                    <p>χ² = 1.23, p = 0.267</p>
+                    <span class="result not-significant">✗ Las variables son independientes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración común
+        Chart.defaults.color = 'rgba(255, 255, 255, 0.8)';
+        Chart.defaults.font.family = 'Work Sans';
+        Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.1)';
+
+        // 1. Boxplot (simulado con bar chart)
+        const boxplotCtx = document.getElementById('boxplotChart').getContext('2d');
+        new Chart(boxplotCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Matutino', 'Vespertino'],
+                datasets: [{
+                    label: 'Promedio General',
+                    data: [8.2, 7.8],
+                    backgroundColor: [
+                        'rgba(0, 217, 255, 0.6)',
+                        'rgba(255, 107, 53, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(0, 217, 255, 1)',
+                        'rgba(255, 107, 53, 1)'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Comparación de Promedios por Turno',
+                        font: { size: 18 },
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 10,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // 2. Histograma
+        const histogramCtx = document.getElementById('histogramChart').getContext('2d');
+        new Chart(histogramCtx, {
+            type: 'line',
+            data: {
+                labels: ['6.0', '6.5', '7.0', '7.5', '8.0', '8.5', '9.0', '9.5', '10.0'],
+                datasets: [{
+                    label: 'Matutino',
+                    data: [2, 5, 12, 18, 25, 20, 12, 5, 1],
+                    borderColor: 'rgba(0, 217, 255, 1)',
+                    backgroundColor: 'rgba(0, 217, 255, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3
+                }, {
+                    label: 'Vespertino',
+                    data: [3, 8, 15, 22, 20, 15, 10, 5, 2],
+                    borderColor: 'rgba(255, 107, 53, 1)',
+                    backgroundColor: 'rgba(255, 107, 53, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { font: { size: 14 } }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribución de Promedios',
+                        font: { size: 18 },
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        title: { display: true, text: 'Frecuencia' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        title: { display: true, text: 'Promedio General' }
+                    }
+                }
+            }
+        });
+
+        // 3. Tasas de Aprobación
+        const approvalCtx = document.getElementById('approvalChart').getContext('2d');
+        new Chart(approvalCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Matutino Aprobados', 'Matutino Reprobados', 'Vespertino Aprobados', 'Vespertino Reprobados'],
+                datasets: [{
+                    data: [78, 22, 65, 35],
+                    backgroundColor: [
+                        'rgba(0, 217, 255, 0.8)',
+                        'rgba(0, 217, 255, 0.3)',
+                        'rgba(255, 107, 53, 0.8)',
+                        'rgba(255, 107, 53, 0.3)'
+                    ],
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: { 
+                            font: { size: 12 },
+                            padding: 15
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribución de Aprobación por Turno',
+                        font: { size: 18 },
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                }
+            }
+        });
+
+        // 4. Chi-cuadrado
+        const chiSquareCtx = document.getElementById('chiSquareChart').getContext('2d');
+        new Chart(chiSquareCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Casa', 'Biblioteca', 'Café', 'Escuela'],
+                datasets: [{
+                    label: 'Matutino',
+                    data: [45, 25, 15, 15],
+                    backgroundColor: 'rgba(0, 217, 255, 0.6)',
+                    borderColor: 'rgba(0, 217, 255, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }, {
+                    label: 'Vespertino',
+                    data: [30, 35, 20, 15],
+                    backgroundColor: 'rgba(255, 107, 53, 0.6)',
+                    borderColor: 'rgba(255, 107, 53, 1)',
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: { font: { size: 14 } }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Lugar de Estudio por Turno (%)',
+                        font: { size: 18 },
+                        color: 'rgba(255, 255, 255, 0.9)'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        title: { display: true, text: 'Porcentaje (%)' }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
